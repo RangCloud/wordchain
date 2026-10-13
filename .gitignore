@@ -1,0 +1,32 @@
+# ── 의존성 · 빌드 산출물 ─────────────────────────────
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+*.tsbuildinfo
+
+# Prebuild로 다시 만들 수 있는 네이티브 폴더는 커밋하지 않는다
+apps/mobile/android/
+apps/mobile/ios/
+
+# ── Python ───────────────────────────────────────────
+__pycache__/
+.venv/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── 비밀값 · 서명 키 (절대 커밋 금지) ────────────────
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+
+# ── OS · 에디터 · 에이전트 로컬 설정 ─────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.claude/

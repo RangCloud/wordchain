@@ -1,0 +1,5 @@
+# Windows(CRLF)와 CI(Linux, LF)의 줄바꿈 차이로 diff가 오염되지 않도록 저장소에는 LF로 통일한다
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ttf binary

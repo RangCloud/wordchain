@@ -1,0 +1,38 @@
+# PR마다 린트 · 타입 체크 · 테스트를 돌려 실패하면 머지를 막는다 (브랜치 보호 규칙에서 필수 체크로 지정)
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      # npm ci는 package-lock.json을 그대로 재현한다 → lock 파일은 반드시 커밋할 것
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+
+  api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -q

@@ -1,0 +1,18 @@
+{
+  // 레포를 열면 VS Code가 아래 확장 설치를 제안한다
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.debugpy",
+    "charliermarsh.ruff",
+    "expo.vscode-expo-tools",
+    "usernamehw.errorlens",
+    "eamodio.gitlens",
+    "humao.rest-client",
+    "qwtel.sqlite-viewer",
+    "ms-azuretools.vscode-docker",
+    "yzhang.markdown-all-in-one"
+  ]
+}

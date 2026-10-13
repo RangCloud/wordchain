@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // F5 한 번으로 FastAPI를 디버거와 함께 실행한다 (중단점 사용 가능)
+      "name": "API: FastAPI (uvicorn)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["app.main:app", "--reload", "--port", "8000"],
+      "cwd": "${workspaceFolder}/apps/api",
+      // 비밀값은 코드가 아닌 .env에서 읽는다 (.env는 .gitignore 대상)
+      "envFile": "${workspaceFolder}/apps/api/.env",
+      "justMyCode": true
+    },
+    {
+      "name": "API: pytest",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["-q"],
+      "cwd": "${workspaceFolder}/apps/api",
+      "justMyCode": false
+    }
+  ]
+}

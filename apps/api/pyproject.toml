@@ -1,0 +1,30 @@
+[project]
+name = "wordchain-api"
+version = "0.1.0"
+description = "말꼬리 끝말잇기 규칙 엔진 · 게임 서버"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic-settings>=2.4",
+]
+
+# 개발 전용 의존성: 배포 이미지에는 들어가지 않는다 (uv sync가 기본으로 함께 설치)
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "httpx>=0.27",
+    "ruff>=0.6",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# E/F: 기본 오류, I: import 정렬, B: 흔한 버그 패턴, UP: 최신 문법, SIM: 단순화 제안
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

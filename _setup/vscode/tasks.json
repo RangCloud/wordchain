@@ -1,0 +1,28 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Ctrl+Shift+P → "Tasks: Run Task"로 실행. 터미널 경로를 매번 옮기지 않아도 된다
+      "label": "mobile: expo start",
+      "type": "shell",
+      "command": "npx expo start",
+      "options": { "cwd": "${workspaceFolder}/apps/mobile" },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "mobile: typecheck + lint",
+      "type": "shell",
+      "command": "npm run typecheck; npm run lint",
+      "options": { "cwd": "${workspaceFolder}/apps/mobile" },
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "api: test",
+      "type": "shell",
+      "command": "uv run pytest -q",
+      "options": { "cwd": "${workspaceFolder}/apps/api" },
+      "problemMatcher": []
+    }
+  ]
+}

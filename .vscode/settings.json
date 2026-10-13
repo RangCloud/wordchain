@@ -1,0 +1,39 @@
+{
+  // 저장할 때마다 포맷 + 린트 자동 수정 → 스타일 논쟁과 리뷰 잡음을 없앤다
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+
+  // 파이썬은 Ruff 하나로 포맷 · import 정렬 · 린트를 통일한다
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  },
+
+  // 모노레포라 ESLint가 apps/mobile의 설정 파일을 찾도록 작업 폴더를 알려준다
+  "eslint.workingDirectories": ["apps/mobile"],
+
+  // uv가 만든 가상환경을 기본 인터프리터로 지정 (Windows 경로)
+  "python.defaultInterpreterPath": "${workspaceFolder}/apps/api/.venv/Scripts/python.exe",
+  "python.testing.pytestEnabled": true,
+  "python.testing.cwd": "${workspaceFolder}/apps/api",
+  "python.testing.pytestArgs": ["tests"],
+
+  // VS Code 내장 TS가 아닌 프로젝트 TS 버전을 써서 CI와 타입 오류 결과를 맞춘다
+  "typescript.tsdk": "apps/mobile/node_modules/typescript/lib",
+
+  "files.eol": "\n",
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.expo": true,
+    "**/.venv": true
+  }
+}

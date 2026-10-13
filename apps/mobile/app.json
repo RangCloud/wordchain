@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "말꼬리",
+    "slug": "wordchain",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "wordchain",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.rangcloud.wordchain"
+    },
+    "android": {
+      "package": "com.rangcloud.wordchain"
+    },
+    "web": {
+      "output": "single",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
