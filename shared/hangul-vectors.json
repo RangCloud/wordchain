@@ -1,0 +1,48 @@
+{
+  "description": "한글 분해·두음법칙 테스트 벡터. 서버(pytest)와 앱(Jest)이 같은 파일을 읽어 두 구현이 같은 결과를 내는지 검증한다.",
+  "decompose": [
+    { "char": "가", "cho": 0, "jung": 0, "jong": 0 },
+    { "char": "힣", "cho": 18, "jung": 20, "jong": 27 },
+    { "char": "한", "cho": 18, "jung": 0, "jong": 4 },
+    { "char": "력", "cho": 5, "jung": 6, "jong": 1 },
+    { "char": "늠", "cho": 2, "jung": 18, "jong": 16 },
+    { "char": "뢰", "cho": 5, "jung": 11, "jong": 0 }
+  ],
+  "dueum": [
+    { "input": "량", "output": "양" },
+    { "input": "력", "output": "역" },
+    { "input": "례", "output": "예" },
+    { "input": "료", "output": "요" },
+    { "input": "류", "output": "유" },
+    { "input": "리", "output": "이" },
+    { "input": "린", "output": "인" },
+    { "input": "락", "output": "낙" },
+    { "input": "래", "output": "내" },
+    { "input": "로", "output": "노" },
+    { "input": "뢰", "output": "뇌" },
+    { "input": "루", "output": "누" },
+    { "input": "름", "output": "늠" },
+    { "input": "랑", "output": "낭" },
+    { "input": "녀", "output": "여" },
+    { "input": "뇨", "output": "요" },
+    { "input": "뉴", "output": "유" },
+    { "input": "니", "output": "이" },
+    { "input": "님", "output": "임" },
+    { "input": "녁", "output": "역" },
+    { "input": "러", "output": "러" },
+    { "input": "레", "output": "레" },
+    { "input": "뢔", "output": "뢔" },
+    { "input": "나", "output": "나" },
+    { "input": "너", "output": "너" },
+    { "input": "늬", "output": "늬" },
+    { "input": "양", "output": "양" },
+    { "input": "가", "output": "가" }
+  ],
+  "allowedStarts": [
+    { "input": "량", "output": ["량", "양"] },
+    { "input": "름", "output": ["름", "늠"] },
+    { "input": "녀", "output": ["녀", "여"] },
+    { "input": "양", "output": ["양"] },
+    { "input": "러", "output": ["러"] }
+  ]
+}
