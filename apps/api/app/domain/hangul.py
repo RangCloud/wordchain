@@ -38,3 +38,35 @@ def compose(cho: int, jung: int, jong: int = 0) -> str:
     if not (0 <= cho < CHO_COUNT and 0 <= jung < JUNG_COUNT and 0 <= jong < JONG_COUNT):
         raise ValueError(f"인덱스 범위를 벗어났습니다: {(cho, jung, jong)}")
     return chr(HANGUL_BASE + (cho * JUNG_COUNT + jung) * JONG_COUNT + jong)
+
+
+# ── 두음법칙 (한글 맞춤법 제10~12항, 단어 첫머리 규칙) ──────────────────
+_CHO_N, _CHO_R, _CHO_O = 2, 5, 11  # ㄴ, ㄹ, ㅇ
+_R_TO_O = frozenset({2, 6, 7, 12, 17, 20})  # ㄹ + ㅑ ㅕ ㅖ ㅛ ㅠ ㅣ → ㅇ
+_R_TO_N = frozenset({0, 1, 8, 11, 13, 18})  # ㄹ + ㅏ ㅐ ㅗ ㅚ ㅜ ㅡ → ㄴ
+_N_TO_O = frozenset({6, 12, 17, 20})  # ㄴ + ㅕ ㅛ ㅠ ㅣ → ㅇ
+
+
+def dueum(ch: str) -> str:
+    """두음법칙을 적용한 글자를 돌려준다. 대상이 아니면 그대로 돌려준다.
+
+    표에 없는 조합(러, 레 등)은 바꾸지 않는다. 받침은 항상 유지한다(력 → 역).
+    """
+    cho, jung, jong = decompose(ch)
+    if cho == _CHO_R and jung in _R_TO_O:
+        return compose(_CHO_O, jung, jong)
+    if cho == _CHO_R and jung in _R_TO_N:
+        return compose(_CHO_N, jung, jong)
+    if cho == _CHO_N and jung in _N_TO_O:
+        return compose(_CHO_O, jung, jong)
+    return ch
+
+
+def allowed_starts(last_char: str) -> tuple[str, ...]:
+    """앞 단어의 끝 글자 뒤에 올 수 있는 시작 글자들. 원래 글자가 항상 맨 앞이다.
+
+    집합 대신 튜플을 쓰는 이유: 순서가 고정되어야 AI 후보 순서와 테스트 결과가 재현된다.
+    변환은 한 방향이다. '량' 뒤에 '양'은 되지만 '양' 뒤에 '량'은 안 된다.
+    """
+    converted = dueum(last_char)
+    return (last_char,) if converted == last_char else (last_char, converted)
