@@ -30,3 +30,6 @@ htmlcov/
 Thumbs.db
 .idea/
 .claude/
+
+# ── 사전 원본 (용량이 크고 재배포 조건이 있어 커밋하지 않는다) ──
+apps/api/data/raw/
