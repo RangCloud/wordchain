@@ -48,7 +48,9 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def handle_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
         request_id = _new_request_id()
         logger.info("validation error [%s]: %s", request_id, exc.errors())
-        return _error_response(422, "VALIDATION_ERROR", "요청 형식이 올바르지 않습니다.", request_id)
+        return _error_response(
+            422, "VALIDATION_ERROR", "요청 형식이 올바르지 않습니다.", request_id
+        )
 
     @app.exception_handler(StarletteHTTPException)
     async def handle_http_error(_: Request, exc: StarletteHTTPException) -> JSONResponse:
