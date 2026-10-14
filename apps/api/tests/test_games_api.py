@@ -11,8 +11,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api.games import get_clock, get_dictionary
+from app.domain.ai_player import Difficulty
 from app.domain.dictionary import InMemoryDictionary
 from app.main import create_app
+from app.repositories.game_repo import GameSession, InMemoryGameRepo
 from tests.domain_fixtures import WORDS
 
 
@@ -257,6 +259,15 @@ def test_forfeit_ends_game_once(api: TestClient) -> None:
     assert second.status_code == 409
 
 
+def test_forfeit_after_deadline_records_timeout(api: TestClient, clock: FakeClock) -> None:
+    game_id = new_game(api)["game_id"]
+    clock.advance(seconds=20)
+
+    body = api.post(f"/v1/games/{game_id}/forfeit").json()
+
+    assert body["end_reason"] == "TIMEOUT"
+
+
 def test_result_lists_words_with_definitions(api: TestClient) -> None:
     game_id = new_game(api)["game_id"]
     move(api, game_id, 1, "역량")
@@ -279,3 +290,18 @@ def test_result_of_playing_game_is_rejected(api: TestClient) -> None:
 
     assert res.status_code == 409
     assert res.json()["error"]["code"] == "GAME_IN_PROGRESS"
+
+
+# --- 저장소 ---
+
+
+def test_repo_purges_expired_sessions_on_save(clock: FakeClock) -> None:
+    repo = InMemoryGameRepo()
+    old = GameSession("old", Difficulty.NORMAL, 1, clock.now, clock.now)
+    repo.save(old)
+    clock.advance(minutes=31)
+
+    repo.save(GameSession("new", Difficulty.NORMAL, 1, clock.now, clock.now))
+
+    # 아무도 조회하지 않은 만료 세션도 메모리에서 지워져야 한다
+    assert "old" not in repo._sessions

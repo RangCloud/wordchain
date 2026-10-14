@@ -74,7 +74,7 @@
 
 ## 13. 진행 상태 (2026-10-14 기준, 작업 후 갱신)
 - 작업 브랜치: `feature/game-api` (원격: GitHub `RangCloud/wordchain`, 규칙 엔진·사전은 PR #1로 `main`에 병합됨)
-- **완료**: `domain/`(hangul · dictionary · rule_engine · ai_player), `scripts/build_dictionary.py`, `repositories/dictionary.py`, `shared/hangul-vectors.json`. 테스트 152개 통과, `domain` 커버리지 100%. 10/15 관문 통과.
-- **다음**: ① `repositories/game_repo.py` + `services/game_service.py` + `api/games.py`(API 5개) + 통합 테스트 TC-W-13~17 → ② 앱 `src/lib/hangul.ts`(공유 벡터로 검증) + API 연동 → ③ 게임·결과 화면을 실제 데이터로 연결 → ④ QA · 배포
-- **정해 둔 것**: 쉬움·보통 AI는 한방단어를 쓰지 않는다(후보가 한방뿐이면 AI 패배). `judge`는 공백을 제거하지 않는다(서비스에서 처리). 동음이의어는 뜻을 하나만 저장한다(결과 화면 작업 때 재검토). UI 디자인은 나중에 다시 바꾸므로 지금은 기존 화면에 데이터만 연결한다.
+- **완료**: `domain/`(hangul · dictionary · rule_engine · ai_player), `scripts/build_dictionary.py`, `repositories/dictionary.py`, `shared/hangul-vectors.json`, 게임 API 5종(`repositories/game_repo.py` · `services/game_service.py` · `api/games.py`). 테스트 175개 통과, `domain`·`services` 커버리지 100%. 10/15 관문 통과.
+- **다음**: ② 앱 `src/lib/hangul.ts`(공유 벡터로 검증) + API 연동 → ③ 게임·결과 화면을 실제 데이터로 연결 → ④ QA · 배포(429 RATE_LIMITED 포함)
+- **정해 둔 것**: 쉬움·보통 AI는 한방단어를 쓰지 않는다(후보가 한방뿐이면 AI 패배). `judge`는 공백을 제거하지 않는다(서비스에서 처리). 동음이의어는 뜻을 하나만 저장한다(결과 화면 작업 때 재검토). UI 디자인은 나중에 다시 바꾸므로 지금은 기존 화면에 데이터만 연결한다. 점수는 승리 때만 100 × 난이도 배율. 무효 제출도 `turn`을 1 올린다(재전송 방지). 종료 사유 코드: `TIMEOUT` · `NO_LIVES` · `AI_STUCK` · `FORFEIT`(문구는 앱이 정함).
 - **작업 방식**: 에이전트가 먼저 구현·테스트하고, 그 뒤에 무엇을 왜 했는지 설명한다. 토큰을 아끼기 위해 설명은 핵심만 쓴다.

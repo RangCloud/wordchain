@@ -133,7 +133,8 @@ class GameService:
         with session.lock:
             if session.status != "playing":
                 raise AppError("GAME_ALREADY_ENDED", "이미 끝난 게임입니다.", 409)
-            _end(session, "lost", END_FORFEIT)
+            # 마감이 이미 지났다면 패배 원인은 기권이 아니라 시간 초과다 (G-06: 패배 원인 표시)
+            _end(session, "lost", END_TIMEOUT if _is_overdue(session, now) else END_FORFEIT)
         return session
 
     def get_result(self, game_id: str) -> tuple[GameSession, list[tuple[Move, str | None]]]:
