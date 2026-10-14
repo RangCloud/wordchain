@@ -67,7 +67,9 @@ class GameService:
             deadline=now + _turn_limit(difficulty),
             lives=START_LIVES,
         )
-        self._repo.save(session)
+        if not self._repo.save(session):
+            # 메모리 보호: 세션이 상한에 닿으면 새 게임을 받지 않는다. 기존 게임은 계속 진행된다
+            raise AppError("SERVER_BUSY", "지금은 사람이 많아요. 잠시 후 다시 시도해 주세요.", 503)
         return session
 
     def get_state(self, game_id: str) -> GameSession:

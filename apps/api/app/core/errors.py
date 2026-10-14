@@ -39,6 +39,11 @@ def _error_response(status_code: int, code: str, message: str, request_id: str) 
     return JSONResponse(status_code=status_code, content=body.model_dump())
 
 
+def error_response(status_code: int, code: str, message: str) -> JSONResponse:
+    """예외 처리기 밖(미들웨어)에서도 같은 오류 형식을 쓰기 위한 함수."""
+    return _error_response(status_code, code, message, _new_request_id())
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def handle_app_error(_: Request, exc: AppError) -> JSONResponse:

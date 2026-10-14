@@ -44,16 +44,21 @@ class GameSession:
 
 
 class InMemoryGameRepo:
-    def __init__(self, ttl: timedelta = SESSION_TTL) -> None:
+    def __init__(self, ttl: timedelta = SESSION_TTL, max_sessions: int = 10_000) -> None:
         self._ttl = ttl
+        self._max_sessions = max_sessions
         self._sessions: dict[str, GameSession] = {}
         self._lock = threading.Lock()
 
-    def save(self, session: GameSession) -> None:
+    def save(self, session: GameSession) -> bool:
+        """저장하면 True. 만료 세션을 정리해도 가득 차 있으면 저장하지 않고 False."""
         with self._lock:
             # 만료된 세션이 쌓여 메모리가 늘지 않도록 새 게임을 만들 때마다 정리한다
             self._purge(session.created_at)
+            if len(self._sessions) >= self._max_sessions:
+                return False
             self._sessions[session.game_id] = session
+            return True
 
     def get(self, game_id: str, now: datetime) -> GameSession | None:
         with self._lock:

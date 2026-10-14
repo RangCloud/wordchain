@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     # 기본값을 False로 두어, .env를 빠뜨린 운영 환경에서도 안전한 쪽으로 동작하게 한다
     debug: bool = False
     cors_origins: list[str] = []
+    # IP당 분당 요청 수 (429 RATE_LIMITED). 한 판에 1분당 많아야 20번 남짓 요청하므로 넉넉한 값.
+    # 0이면 끈다(부하 테스트용)
+    rate_limit_per_minute: int = 60
+    # 동시에 메모리에 둘 수 있는 게임 수. 게임 생성을 쏟아부어 메모리를 채우는 공격을 막는다
+    max_sessions: int = 10_000
     # 만드는 방법: uv run python -m scripts.build_dictionary
     dictionary_path: Path = API_DIR / "data" / "dictionary.sqlite"
 
