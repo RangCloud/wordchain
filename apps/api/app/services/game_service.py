@@ -23,6 +23,10 @@ from app.repositories.game_repo import GameSession, InMemoryGameRepo, Move
 Clock = Callable[[], datetime]
 
 START_LIVES = 3
+# 점수: 받아들여진 단어마다 '글자 수 × 10점', 승리하면 100점을 더 얹고 모두 난이도 배율을 곱한다.
+# 긴 단어일수록 잇기 어렵고 생각할 시간이 들므로 글자 수에 비례시킨다.
+# 기본 점수가 10의 배수라 배율(1.0/1.5/2.0)을 곱해도 항상 정수가 된다 → 반올림 오차가 없다
+POINTS_PER_CHAR = 10
 WIN_POINTS = 100
 SCORE_MULTIPLIER = {Difficulty.EASY: 1.0, Difficulty.NORMAL: 1.5, Difficulty.HARD: 2.0}
 TURN_SECONDS = {Difficulty.EASY: 15, Difficulty.NORMAL: 15, Difficulty.HARD: 10}
@@ -108,6 +112,7 @@ class GameService:
                 return MoveOutcome(verdict, None, session)
 
             _record(session, word, "player")
+            session.score += _points(session.difficulty, POINTS_PER_CHAR * len(word))
             ai_word = choose_word(
                 previous_word=word,
                 used=session.used_words,
@@ -119,7 +124,7 @@ class GameService:
             )
             if ai_word is None:
                 _end(session, "won", END_AI_STUCK)
-                session.score = round(WIN_POINTS * SCORE_MULTIPLIER[session.difficulty])
+                session.score += _points(session.difficulty, WIN_POINTS)
                 return MoveOutcome(verdict, None, session)
 
             _record(session, ai_word, "ai")
@@ -152,6 +157,10 @@ class GameService:
 
 def _turn_limit(difficulty: Difficulty) -> timedelta:
     return timedelta(seconds=TURN_SECONDS[difficulty])
+
+
+def _points(difficulty: Difficulty, base: int) -> int:
+    return int(base * SCORE_MULTIPLIER[difficulty])
 
 
 def _is_overdue(session: GameSession, now: datetime) -> bool:

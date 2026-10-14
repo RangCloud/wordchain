@@ -106,6 +106,34 @@ def test_ok_move_gets_ai_reply_and_new_deadline(api: TestClient, clock: FakeCloc
     assert datetime.fromisoformat(state["deadline"]) == clock.now + timedelta(seconds=15)
 
 
+@pytest.mark.parametrize(
+    ("difficulty", "word", "expected"),
+    [
+        ("easy", "역량", 20),
+        ("normal", "역량", 30),
+        ("hard", "역량", 40),
+        ("normal", "기상예보", 60),  # 4글자 × 10 × 1.5
+    ],
+)
+def test_ok_word_scores_by_length_and_difficulty(
+    api: TestClient, difficulty: str, word: str, expected: int
+) -> None:
+    game_id = new_game(api, difficulty)["game_id"]
+
+    body = move(api, game_id, 1, word)
+
+    assert body["verdict"] == "OK"
+    assert body["game"]["score"] == expected
+
+
+def test_invalid_word_scores_nothing(api: TestClient) -> None:
+    game_id = new_game(api)["game_id"]
+
+    body = move(api, game_id, 1, "없는말")
+
+    assert body["game"]["score"] == 0
+
+
 def test_surrounding_whitespace_is_trimmed(api: TestClient) -> None:
     game = new_game(api)
 
@@ -146,7 +174,8 @@ def test_player_wins_when_ai_has_no_word(api: TestClient) -> None:
     assert body["ai_word"] is None
     assert body["game"]["status"] == "won"
     assert body["game"]["end_reason"] == "AI_STUCK"
-    assert body["game"]["score"] == 150  # 100 × 보통 배율 1.5
+    # 2글자 단어 3개(각 20점) + 승리 100점, 보통 배율 1.5 → (60 + 100) × 1.5
+    assert body["game"]["score"] == 240
 
 
 # --- G-05 타이머 ---
@@ -276,7 +305,7 @@ def test_result_lists_words_with_definitions(api: TestClient) -> None:
     body = api.get(f"/v1/games/{game_id}/result").json()
 
     assert body["status"] == "lost"
-    assert body["score"] == 0
+    assert body["score"] == 30  # 패배해도 받아들여진 단어 점수는 남는다: 20 × 1.5
     assert body["words"] == [
         {"word": "역량", "by": "player", "definition": "역량의 뜻"},
         {"word": "양말", "by": "ai", "definition": "양말의 뜻"},
