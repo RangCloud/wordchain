@@ -18,12 +18,16 @@ export const MOCK_BEST_SCORES: Record<Difficulty, number | null> = {
 export const MOCK_GAME: GameState = {
   gameId: 'demo',
   difficulty: 'normal',
+  status: 'playing',
+  endReason: null,
   turn: 5,
   lives: 2,
   maxLives: 3,
   score: 160,
   allowedStarts: ['량', '양'],
   turnSeconds: 15,
+  deadlineAt: 0, // 게임 화면이 열린 시각 기준으로 다시 잡는다
+  lastWord: '역량',
   chain: [
     { turn: 1, speaker: 'player', word: '학교' },
     { turn: 2, speaker: 'ai', word: '교실' },

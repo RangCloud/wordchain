@@ -7,7 +7,7 @@ from hypothesis import strategies as st
 
 from app.domain.hangul import allowed_starts, decompose, dueum
 
-# 앱(Jest)과 함께 쓰는 벡터 파일. 저장소 루트의 shared/에 있다
+# 앱(node:test)과 함께 쓰는 벡터 파일. 저장소 루트의 shared/에 있다
 VECTORS = json.loads(
     (Path(__file__).parents[3] / "shared" / "hangul-vectors.json").read_text(encoding="utf-8")
 )
