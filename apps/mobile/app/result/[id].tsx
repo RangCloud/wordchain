@@ -9,6 +9,7 @@ import { LoadState } from '@/components/LoadState';
 import { ManuscriptCells } from '@/components/ManuscriptCells';
 import { Screen } from '@/components/Screen';
 import { gameApi, type ServerResult } from '@/features/game/api';
+import { recordScore } from '@/features/game/bestScoresStore';
 import { errorMessage, isValidGameId } from '@/features/game/logic';
 import { DIFFICULTIES, REASON_LABELS, type ResultWord } from '@/features/game/types';
 import { formatNumber } from '@/lib/format';
@@ -58,8 +59,17 @@ export default function ResultScreen() {
 function ResultView({ result }: { result: ServerResult }) {
   const router = useRouter();
   const { colors } = useTheme();
-  // 최고 기록(G-08)은 기기 저장소가 필요해 아직 연결하지 않았다
-  const isNewBest = false;
+  const [isNewBest, setIsNewBest] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void recordScore(result.gameId, result.difficulty, result.score).then((v) => {
+      if (active) setIsNewBest(v);
+    });
+    return () => {
+      active = false;
+    };
+  }, [result]);
   const won = result.outcome === 'won';
   const difficultyName = DIFFICULTIES.find((d) => d.id === result.difficulty)?.name ?? '';
 

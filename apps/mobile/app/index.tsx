@@ -1,12 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { ManuscriptCells } from '@/components/ManuscriptCells';
 import { Screen } from '@/components/Screen';
+import type { BestScores } from '@/features/game/bestScores';
+import { loadBestScores } from '@/features/game/bestScoresStore';
 import { DIFFICULTIES, type Difficulty } from '@/features/game/types';
 import { formatNumber } from '@/lib/format';
 import type { IconName } from '@/lib/icons';
@@ -20,6 +22,20 @@ export default function HomeScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
+  const [bestScores, setBestScores] = useState<BestScores | null>(null);
+
+  // 결과 화면에서 돌아올 때마다 기록을 다시 읽는다(방금 갱신했을 수 있으므로)
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      void loadBestScores().then((scores) => {
+        if (active) setBestScores(scores);
+      });
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
 
   return (
     <Screen edges={['top', 'bottom']}>
@@ -37,8 +53,7 @@ export default function HomeScreen() {
         <View accessibilityRole="radiogroup" style={[styles.options, { borderColor: colors.rule }]}>
           {DIFFICULTIES.map((d, i) => {
             const selected = d.id === difficulty;
-            // 최고 기록(G-08)은 기기 저장소를 붙일 때 채운다. 가짜 기록을 보여 주지 않도록 비워 둔다
-            const best: number | null = null;
+            const best = bestScores?.[d.id] ?? null;
             return (
               <Pressable
                 key={d.id}
