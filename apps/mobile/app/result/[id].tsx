@@ -1,13 +1,15 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
+import { LoadState } from '@/components/LoadState';
 import { ManuscriptCells } from '@/components/ManuscriptCells';
 import { Screen } from '@/components/Screen';
-import { MOCK_RESULT } from '@/features/game/mock';
+import { gameApi, type ServerResult } from '@/features/game/api';
+import { errorMessage, isValidGameId } from '@/features/game/logic';
 import { DIFFICULTIES, REASON_LABELS, type ResultWord } from '@/features/game/types';
 import { formatNumber } from '@/lib/format';
 import { MIN_TOUCH, space, useTheme } from '@/theme';
@@ -19,8 +21,45 @@ import { MIN_TOUCH, space, useTheme } from '@/theme';
  */
 export default function ResultScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const validId = isValidGameId(id);
+  const [result, setResult] = useState<ServerResult | null>(null);
+  const [error, setError] = useState<string | null>(validId ? null : '잘못된 결과 주소예요.');
+
+  const load = useCallback(async () => {
+    if (!isValidGameId(id)) return;
+    setError(null);
+    try {
+      setResult(await gameApi.getResult(id));
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  }, [id]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  if (!result) {
+    return (
+      <Screen edges={['top', 'bottom']}>
+        <LoadState
+          error={error}
+          loadingText="결과를 불러오고 있어요"
+          onRetry={validId ? load : undefined}
+          onHome={() => router.dismissTo('/')}
+        />
+      </Screen>
+    );
+  }
+  return <ResultView result={result} />;
+}
+
+function ResultView({ result }: { result: ServerResult }) {
+  const router = useRouter();
   const { colors } = useTheme();
-  const result = MOCK_RESULT; // 2주차: GET /v1/games/{id}/result
+  // 최고 기록(G-08)은 기기 저장소가 필요해 아직 연결하지 않았다
+  const isNewBest = false;
   const won = result.outcome === 'won';
   const difficultyName = DIFFICULTIES.find((d) => d.id === result.difficulty)?.name ?? '';
 
@@ -45,7 +84,7 @@ export default function ResultScreen() {
               점
             </AppText>
           </AppText>
-          {result.isNewBest ? (
+          {isNewBest ? (
             <View style={styles.best}>
               <Ionicons name="trophy" size={16} color={colors.warn} />
               <AppText variant="label" tone="warn" bold>
@@ -55,7 +94,12 @@ export default function ResultScreen() {
           ) : null}
         </View>
 
-        <AppText variant="label" tone="muted" accessibilityRole="header" style={styles.sectionTitle}>
+        <AppText
+          variant="label"
+          tone="muted"
+          accessibilityRole="header"
+          style={styles.sectionTitle}
+        >
           이번 판의 단어 {result.words.length}개
         </AppText>
         <View>
@@ -66,7 +110,11 @@ export default function ResultScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button label="다시 하기" icon="refresh" onPress={() => router.replace('/game/demo')} />
+        <Button
+          label="다시 하기"
+          icon="refresh"
+          onPress={() => router.replace(`/game/new?difficulty=${result.difficulty}`)}
+        />
         <Button label="홈으로" variant="secondary" onPress={() => router.dismissTo('/')} />
       </View>
     </Screen>

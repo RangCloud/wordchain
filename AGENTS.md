@@ -74,7 +74,8 @@
 
 ## 13. 진행 상태 (2026-10-14 기준, 작업 후 갱신)
 - 작업 브랜치: `feature/game-api` (원격: GitHub `RangCloud/wordchain`, 규칙 엔진·사전은 PR #1로 `main`에 병합됨)
-- **완료**: `domain/`(hangul · dictionary · rule_engine · ai_player), `scripts/build_dictionary.py`, `repositories/dictionary.py`, `shared/hangul-vectors.json`, 게임 API 5종(`repositories/game_repo.py` · `services/game_service.py` · `api/games.py`). 앱 `src/lib/hangul.ts`(공유 벡터 검증) · `src/features/game/api.ts`(API 클라이언트). 테스트 서버 180개 · 앱 57개 통과, `domain`·`services` 커버리지 100%. 10/15 관문 통과.
-- **다음**: ③ 게임·결과 화면을 실제 데이터로 연결 → ④ QA · 배포(429 RATE_LIMITED 포함)
+- **완료**: `domain/`(hangul · dictionary · rule_engine · ai_player), `scripts/build_dictionary.py`, `repositories/dictionary.py`, `shared/hangul-vectors.json`, 게임 API 5종(`repositories/game_repo.py` · `services/game_service.py` · `api/games.py`). 앱 `src/lib/hangul.ts`(공유 벡터 검증) · `src/features/game/api.ts`(API 클라이언트), 게임·결과·홈 화면 실제 데이터 연결, 요청 제한(429)·세션 상한. 테스트 서버 190개 · 앱 63개 통과, `domain`·`services` 커버리지 100%. 10/15 관문 통과.
+- **다음**: ④ QA(실기기 플레이 · TC-W-18) · 배포. 남은 것: G-08 최고 기록(기기 저장소 라이브러리 승인 필요), 동음이의어 뜻 재검토
+- **보안 메모**: 요청 제한 분당 60회·세션 상한 1만(`core/config.py`). 프록시 뒤 배포 시 uvicorn `--proxy-headers --forwarded-allow-ips`로 실제 IP를 받는다. 로컬 `expo export` 번들에는 Hermes 임시 경로(사용자 폴더명)가 들어가므로 출시 빌드는 EAS 클라우드에서 만든다.
 - **정해 둔 것**: 쉬움·보통 AI는 한방단어를 쓰지 않는다(후보가 한방뿐이면 AI 패배). `judge`는 공백을 제거하지 않는다(서비스에서 처리). 동음이의어는 뜻을 하나만 저장한다(결과 화면 작업 때 재검토). UI 디자인은 나중에 다시 바꾸므로 지금은 기존 화면에 데이터만 연결한다. 점수는 받아들여진 단어마다 글자 수 × 10, 승리 시 +100, 모두 난이도 배율(1.0/1.5/2.0)을 곱한다. 무효 제출도 `turn`을 1 올린다(재전송 방지). 종료 사유 코드: `TIMEOUT` · `NO_LIVES` · `AI_STUCK` · `FORFEIT`(문구는 앱이 정함). 앱 테스트는 Jest 대신 Node 내장 `node:test`(`npm test`, 테스트 파일은 `*.test.mts`). 서버 주소는 `apps/mobile/.env`의 `EXPO_PUBLIC_API_URL`.
 - **작업 방식**: 에이전트가 먼저 구현·테스트하고, 그 뒤에 무엇을 왜 했는지 설명한다. 토큰을 아끼기 위해 설명은 핵심만 쓴다.
