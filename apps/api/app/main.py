@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.router import api_router
 from app.core.config import get_settings
 from app.core.errors import register_exception_handlers
+from app.repositories.game_repo import InMemoryGameRepo
 
 
 def create_app() -> FastAPI:
@@ -33,6 +34,9 @@ def create_app() -> FastAPI:
             allow_methods=["GET", "POST"],
             allow_headers=["*"],
         )
+
+    # 게임 세션은 앱 인스턴스마다 따로 둔다 → 테스트마다 create_app()을 부르면 저장소도 깨끗해진다
+    app.state.game_repo = InMemoryGameRepo()
 
     register_exception_handlers(app)
     # 버전 접두사를 두면 나중에 /v2를 추가해도 기존 앱이 깨지지 않는다

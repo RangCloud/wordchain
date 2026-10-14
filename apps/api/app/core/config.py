@@ -6,6 +6,7 @@ pydantic-settings가 타입을 검증하므로 잘못된 값이면 서버가 시
 """
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -18,6 +19,8 @@ class Settings(BaseSettings):
     # 기본값을 False로 두어, .env를 빠뜨린 운영 환경에서도 안전한 쪽으로 동작하게 한다
     debug: bool = False
     cors_origins: list[str] = []
+    # apps/api 기준 상대 경로. 만드는 방법: uv run python -m scripts.build_dictionary
+    dictionary_path: Path = Path("data/dictionary.sqlite")
 
 
 @lru_cache
