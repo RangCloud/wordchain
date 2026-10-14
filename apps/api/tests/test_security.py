@@ -1,5 +1,6 @@
 """남용 방지 (기획서 2-4 429 RATE_LIMITED, 세션 상한)."""
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.api.games import get_dictionary
@@ -105,6 +106,33 @@ def test_new_game_is_refused_when_sessions_are_full() -> None:
     assert res.json()["error"]["code"] == "SERVER_BUSY"
     # 이미 시작한 게임은 계속할 수 있어야 한다
     assert client.get(f"/v1/games/{first.json()['game_id']}").status_code == 200
+
+
+# --- 요청 본문 크기 ---
+
+
+def test_oversized_body_is_rejected_before_parsing() -> None:
+    client = make_client(rate_limit_per_minute=0)
+
+    res = client.post(
+        "/v1/games",
+        content=b'{"difficulty":"' + b"a" * 5000 + b'"}',
+        headers={"Content-Type": "application/json"},
+    )
+
+    assert res.status_code == 413
+    assert res.json()["error"]["code"] == "PAYLOAD_TOO_LARGE"
+
+
+def test_validation_log_does_not_contain_user_input(caplog: pytest.LogCaptureFixture) -> None:
+    client = make_client(rate_limit_per_minute=0)
+    game_id = client.post("/v1/games", json={}).json()["game_id"]
+
+    with caplog.at_level("INFO"):
+        client.post(f"/v1/games/{game_id}/moves", json={"turn": 1, "word": "비밀" * 30})
+
+    assert "비밀" not in caplog.text
+    assert "word" in caplog.text  # 어느 필드가 잘못됐는지는 남는다
 
 
 # --- 오류 응답에 내부 정보가 새지 않는지 ---

@@ -171,6 +171,26 @@ describe('createGameApi', () => {
     await assert.rejects(api.getGame('g1'), { code: 'NETWORK_ERROR' });
   });
 
+  test('출시 빌드(requireHttps)에서는 http 주소로 요청하지 않는다', async () => {
+    const calls: Call[] = [];
+    const api = createGameApi({
+      baseUrl: 'http://api.test',
+      requireHttps: true,
+      fetchImpl: fakeFetch(200, RAW_STATE, calls),
+    });
+
+    await assert.rejects(api.getGame('g1'), { code: 'CONFIG_ERROR' });
+    assert.equal(calls.length, 0);
+
+    const secure = createGameApi({
+      baseUrl: 'https://api.test',
+      requireHttps: true,
+      fetchImpl: fakeFetch(200, RAW_STATE, calls),
+    });
+    await secure.getGame('g1');
+    assert.equal(calls[0]?.url, 'https://api.test/v1/games/g1');
+  });
+
   test('서버 주소가 없으면 요청하지 않고 CONFIG_ERROR', async () => {
     const calls: Call[] = [];
     const api = createGameApi({ baseUrl: undefined, fetchImpl: fakeFetch(200, RAW_STATE, calls) });

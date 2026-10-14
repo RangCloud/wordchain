@@ -19,6 +19,12 @@ class SqliteDictionary:
         # resolve(): 상대 경로는 file URI로 바꿀 수 없다
         uri = f"{path.resolve().as_uri()}?mode=ro"
         self._con = sqlite3.connect(uri, uri=True, check_same_thread=False)
+        # AI는 후보마다 '이어갈 수 있는 단어 수'를 묻기 때문에 한 수에 수천 번 호출된다.
+        # 사전은 읽기 전용이라 글자별 개수가 바뀌지 않으므로 시작할 때 한 번만 센다
+        # (글자 수천 개, 메모리 수백 KB)
+        self._counts: dict[str, int] = dict(
+            self._con.execute("SELECT first_char, COUNT(*) FROM words GROUP BY first_char")
+        )
 
     def close(self) -> None:
         self._con.close()
@@ -28,10 +34,7 @@ class SqliteDictionary:
         return row is not None
 
     def count_starting_with(self, first_char: str) -> int:
-        row = self._con.execute(
-            "SELECT COUNT(*) FROM words WHERE first_char = ?", (first_char,)
-        ).fetchone()
-        return int(row[0])
+        return self._counts.get(first_char, 0)
 
     def words_starting_with(self, first_char: str) -> list[str]:
         # ORDER BY가 있어야 시드를 고정했을 때 AI 결과가 재현된다

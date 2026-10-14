@@ -16,6 +16,8 @@ from app.core.errors import error_response, register_exception_handlers
 from app.core.rate_limit import SlidingWindowLimiter, retry_after_header
 from app.repositories.game_repo import InMemoryGameRepo
 
+MAX_BODY_BYTES = 4096
+
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
@@ -28,6 +30,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         redoc_url=None,
         openapi_url="/openapi.json" if settings.debug else None,
     )
+
+    # 이 API의 요청 본문은 수십 바이트다. 큰 본문은 읽기 전에 거절해 메모리·CPU 낭비를 막는다.
+    # Content-Length 없이 보내는 청크 전송까지 막으려면 앞단 프록시에서도 본문 크기를 제한한다
+    @app.middleware("http")
+    async def limit_body_size(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        length = request.headers.get("content-length")
+        if length is not None and (not length.isdigit() or int(length) > MAX_BODY_BYTES):
+            return error_response(413, "PAYLOAD_TOO_LARGE", "요청이 너무 커요.")
+        return await call_next(request)
 
     # 요청 제한은 CORS보다 먼저 등록한다. Starlette는 나중에 등록한 미들웨어가 바깥쪽이라,
     # 이렇게 해야 429 응답에도 CORS 헤더가 붙어 Expo 웹에서 오류 코드를 읽을 수 있다

@@ -148,14 +148,24 @@ const REQUEST_TIMEOUT_MS = 10_000;
 
 interface Options {
   baseUrl: string | undefined;
+  /** true면 https 주소만 허용한다. 출시 빌드에서 평문(http)으로 단어·게임 ID가 오가지 않게 한다 */
+  requireHttps?: boolean;
   fetchImpl?: typeof fetch;
   now?: () => number;
 }
 
-export function createGameApi({ baseUrl, fetchImpl = fetch, now = Date.now }: Options) {
+export function createGameApi({
+  baseUrl,
+  requireHttps = false,
+  fetchImpl = fetch,
+  now = Date.now,
+}: Options) {
   async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
     if (!baseUrl) {
       throw new ApiError('CONFIG_ERROR', 'EXPO_PUBLIC_API_URL이 설정되지 않았어요', 0);
+    }
+    if (requireHttps && !baseUrl.startsWith('https://')) {
+      throw new ApiError('CONFIG_ERROR', '출시 빌드의 서버 주소는 https여야 해요', 0);
     }
     // 응답이 오지 않으면 타이머가 끝날 때까지 '제출 중'에 갇히므로 일정 시간 뒤 끊는다
     const controller = new AbortController();
@@ -222,4 +232,9 @@ export function createGameApi({ baseUrl, fetchImpl = fetch, now = Date.now }: Op
 export type GameApi = ReturnType<typeof createGameApi>;
 
 // Expo는 빌드할 때 `process.env.EXPO_PUBLIC_*`를 글자 그대로 찾아 값으로 바꾼다 → 구조 분해하면 안 된다
-export const gameApi = createGameApi({ baseUrl: process.env.EXPO_PUBLIC_API_URL });
+// 개발 중(Expo Go·로컬 서버)에는 http를 허용하고, 출시 빌드(__DEV__ === false)에서는 https만 쓴다.
+// typeof 검사: node:test에는 __DEV__가 없다
+export const gameApi = createGameApi({
+  baseUrl: process.env.EXPO_PUBLIC_API_URL,
+  requireHttps: typeof __DEV__ !== 'undefined' && !__DEV__,
+});
