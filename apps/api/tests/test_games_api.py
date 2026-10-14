@@ -68,7 +68,8 @@ def test_create_game_returns_initial_state(api: TestClient, clock: FakeClock) ->
     game = new_game(api)
 
     assert game["status"] == "playing"
-    assert game["lives"] == 3
+    assert game["lives"] == game["max_lives"] == 3
+    assert game["turn_seconds"] == 15
     assert game["turn"] == 1
     assert game["moves"] == []
     assert datetime.fromisoformat(game["deadline"]) == clock.now + timedelta(seconds=15)
@@ -77,6 +78,7 @@ def test_create_game_returns_initial_state(api: TestClient, clock: FakeClock) ->
 def test_hard_game_has_10_second_turn(api: TestClient, clock: FakeClock) -> None:
     game = new_game(api, "hard")
 
+    assert game["turn_seconds"] == 10
     assert datetime.fromisoformat(game["deadline"]) == clock.now + timedelta(seconds=10)
 
 
