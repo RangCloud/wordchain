@@ -23,6 +23,13 @@
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c98f7601-6b62-4a93-a915-37c1d8f756a0"
+      }
+    },
+    "owner": "rangcloud"
   }
 }
