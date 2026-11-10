@@ -37,7 +37,7 @@ import { MIN_TOUCH, fontSize, radius, space, useTheme } from '@/theme';
  * 화면 구성: [나가기 · 목숨 · 점수] → [타이머] → [단어 체인] → [다음 글자 원고지 칸 + 입력]
  *
  * 경로: /game/new?difficulty=normal → 새 게임, /game/<게임 ID> → 진행 중인 게임 이어 하기.
- * 앱은 '시작 글자'만 미리 확인(즉시 피드백)하고, 판정·목숨·점수·시간은 항상 서버 응답을 따른다.
+ * 앱은 '시작 글자'만 미리 확인(즉시 피드백)하고, 판정·목숨·점수·시간은 게임 엔진(gameClient) 결과를 따른다.
  */
 export default function GameScreen() {
   const router = useRouter();

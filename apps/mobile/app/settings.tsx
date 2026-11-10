@@ -31,8 +31,15 @@ export default function SettingsScreen() {
       <AppText variant="label" tone="muted" accessibilityRole="header" style={styles.group}>
         정보
       </AppText>
-      <InfoRow icon="library-outline" label="사전 출처" value="국립국어원 (확인 예정)" />
+      <InfoRow icon="library-outline" label="사전 출처" value="표준국어대사전" />
       <InfoRow icon="information-circle-outline" label="버전" value={version} />
+      {/* CC BY-SA 2.0 KR 조건(저작자·변경 사실 표시). 문구는 README '표기 문구'와 같게 유지한다 */}
+      <AppText variant="caption" tone="muted" style={styles.license}>
+        이 앱의 단어는 국립국어원 표준국어대사전(https://stdict.korean.go.kr)의 자료를 가공하여
+        사용했습니다. 해당 자료는 크리에이티브 커먼즈 저작자표시-동일조건변경허락 2.0 대한민국
+        라이선스(https://creativecommons.org/licenses/by-sa/2.0/kr/)에 따라 이용할 수 있습니다. 이
+        앱은 국립국어원과 관련이 없습니다.
+      </AppText>
     </ScrollView>
   );
 }
@@ -92,4 +99,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   label: { flex: 1 },
+  license: { marginTop: space.md },
 });
