@@ -21,7 +21,7 @@
 - 서버 → `apps/api/app/`: 라우터 `api/` · 게임 진행 `services/` · 규칙 엔진 `domain/` · 사전·세션 `repositories/` · 설정/오류 `core/` · 입출력 타입 `schemas/`
 
 ## 4. 아키텍처 원칙
-- **서버 권위형**: 단어 판정·AI 수·타이머 검증은 서버가 한다. 앱은 입력과 표시만 담당한다.
+- **MVP는 앱 단독(오프라인)**: 판정·AI·타이머를 앱의 `src/features/game/engine.ts`·`localGame.ts`가 처리한다(서버 없이 출시, 2026-11-10 결정). 서버(`apps/api`)는 나중에 랭킹을 붙일 때 서버 권위형으로 다시 쓴다. 앱 엔진과 서버 `domain/`은 같은 규칙을 유지하고 같은 테스트 케이스로 검증한다.
 - AI 상대는 LLM이 아니라 **사전 탐색 알고리즘**이다(환각 없음, 빠름, 시드 고정으로 재현 가능한 테스트).
 - 규칙 엔진(`domain/`)은 FastAPI·DB를 모르는 **순수 함수**로 작성한다.
 - 한글 분해·두음법칙 결과는 `shared/hangul-vectors.json` 테스트 벡터로 앱(TS)과 서버(Python)를 함께 검증한다.
@@ -70,13 +70,13 @@
 ## 12. 사전 데이터
 - 출처는 국립국어원 표준국어대사전(CC BY-SA 2.0 KR). 조건과 출시 전 점검표는 `README.md`의 "사전 데이터 출처와 라이선스"를 따른다.
 - 표제어·품사·뜻풀이만 쓴다. 용례(예문), 발음·이미지 등 다중 매체는 쓰지 않는다.
-- 사전 다시 만들기: `apps/api`에서 `uv run python -m scripts.build_dictionary`
+- 사전 다시 만들기: `apps/api`에서 `uv run python -m scripts.build_dictionary` → 앱 단어 목록 갱신: `uv run python -m scripts.export_word_list` (`apps/mobile/src/features/game/data/words.json`, 단어만·뜻풀이 제외, 커밋한다)
 
-## 13. 진행 상태 (2026-10-14 기준, 작업 후 갱신)
-- 작업 브랜치: `feature/game-api` (원격: GitHub `RangCloud/wordchain`, 규칙 엔진·사전은 PR #1로 `main`에 병합됨)
-- **완료**: `domain/`(hangul · dictionary · rule_engine · ai_player), `scripts/build_dictionary.py`, `repositories/dictionary.py`, `shared/hangul-vectors.json`, 게임 API 5종(`repositories/game_repo.py` · `services/game_service.py` · `api/games.py`). 앱 `src/lib/hangul.ts`(공유 벡터 검증) · `src/features/game/api.ts`(API 클라이언트), 게임·결과·홈 화면 실제 데이터 연결, 요청 제한(429)·세션 상한·본문 4KB 제한, 최고 기록(G-08, AsyncStorage). 테스트 서버 192개 · 앱 71개 통과, `domain`·`services` 커버리지 100%. 10/15 관문 통과.
-- **다음**: ④ 배포(서버 호스팅 · EAS 빌드, 대상 미정) → 실기기 QA(TC-W-18). 남은 것: 동음이의어 뜻 재검토
-- **QA 결과(2026-10-15)**: TC-W-01~17 자동화, 실제 사전으로 게임 300판 무작위·이상 입력 검사 500 오류 0건, AI 응답 최악 4ms
-- **보안 메모**: 요청 제한 분당 60회·세션 상한 1만(`core/config.py`). 프록시 뒤 배포 시 uvicorn `--proxy-headers --forwarded-allow-ips`로 실제 IP를 받는다. 출시 빌드는 https 서버 주소만 허용(`api.ts`). 운영 `.env`는 `DEBUG=false`. 로컬 `expo export` 번들에는 Hermes 임시 경로(사용자 폴더명)가 들어가므로 출시 빌드는 EAS 클라우드에서 만든다.
-- **정해 둔 것**: 쉬움·보통 AI는 한방단어를 쓰지 않는다(후보가 한방뿐이면 AI 패배). `judge`는 공백을 제거하지 않는다(서비스에서 처리). 동음이의어는 뜻을 하나만 저장한다(결과 화면 작업 때 재검토). UI 디자인은 나중에 다시 바꾸므로 지금은 기존 화면에 데이터만 연결한다. 점수는 받아들여진 단어마다 글자 수 × 10, 승리 시 +100, 모두 난이도 배율(1.0/1.5/2.0)을 곱한다. 무효 제출도 `turn`을 1 올린다(재전송 방지). 종료 사유 코드: `TIMEOUT` · `NO_LIVES` · `AI_STUCK` · `FORFEIT`(문구는 앱이 정함). 앱 테스트는 Jest 대신 Node 내장 `node:test`(`npm test`, 테스트 파일은 `*.test.mts`). 서버 주소는 `apps/mobile/.env`의 `EXPO_PUBLIC_API_URL`.
+## 13. 진행 상태 (2026-11-10 기준, 작업 후 갱신)
+- 작업 브랜치: `feature/offline-mode` (원격: GitHub `RangCloud/wordchain`. PR #1 병합, PR #2 `feature/game-api` → `main` 리뷰 중)
+- **완료**: 서버 `domain/`·게임 API·요청 제한(PR #1·#2). 앱 단독 엔진 `engine.ts`(사전·판정·AI) · `localGame.ts`(진행·점수·시간) · `gameClient.ts`(번들 단어 목록 21만 개 지연 로딩), 화면을 앱 엔진으로 연결, 결과 화면은 뜻풀이 없이 단어만, `eas.json`(preview=APK, production=AAB·자동 versionCode). 테스트 서버 192개 · 앱 140개 통과. 실제 단어 목록으로 AI 대 AI 300판: 잘못된 AI 단어 0, AI 응답 최악 1.4ms(Node).
+- **다음**: `eas init`으로 프로젝트 연결 → 앱 아이콘·스플래시 준비 → `eas build -p android --profile preview`로 실기기 QA(TC-W-18) → production 빌드 → `eas submit`(Play 내부 테스트 트랙 · TestFlight). 설정 > 정보 화면에 사전 저작자 표시(README 점검표) 확인.
+- **QA 결과(2026-10-15, 서버 버전)**: TC-W-01~17 자동화, 실제 사전으로 게임 300판 무작위·이상 입력 검사 500 오류 0건, AI 응답 최악 4ms
+- **보안 메모**: 앱 단독 버전은 네트워크 요청이 없다. 서버를 다시 붙일 때: 요청 제한 분당 60회·세션 상한 1만(`core/config.py`), 프록시 뒤에서는 uvicorn `--proxy-headers --forwarded-allow-ips`, 출시 빌드는 https만(`api.ts`), 운영 `.env`는 `DEBUG=false`. 로컬 `expo export` 번들에는 Hermes 임시 경로(사용자 폴더명)가 들어가므로 출시 빌드는 EAS 클라우드에서 만든다.
+- **정해 둔 것**: 뜻풀이는 앱 용량 때문에 넣지 않는다(A안: 단어만 +0.8MB, 전부 넣으면 +9MB). 앱 엔진의 난수는 mulberry32라 서버(Python random)와 같은 시드라도 AI 수가 다르다(앱 안에서만 재현). 쉬움·보통 AI는 한방단어를 쓰지 않는다(후보가 한방뿐이면 AI 패배). `judge`는 공백을 제거하지 않는다(진행 계층에서 처리). 동음이의어는 뜻을 하나만 저장한다. UI 디자인은 나중에 다시 바꾸므로 지금은 기존 화면에 데이터만 연결한다. 점수는 받아들여진 단어마다 글자 수 × 10, 승리 시 +100, 모두 난이도 배율(1.0/1.5/2.0)을 곱한다. 무효 제출도 `turn`을 1 올린다(중복 제출 방지). 종료 사유 코드: `timeout` · `no_lives` · `ai_stuck` · `forfeit`(문구는 앱이 정함). 앱 테스트는 Jest 대신 Node 내장 `node:test`(`npm test`, 테스트 파일은 `*.test.mts`).
 - **작업 방식**: 에이전트가 먼저 구현·테스트하고, 그 뒤에 무엇을 왜 했는지 설명한다. 토큰을 아끼기 위해 설명은 핵심만 쓴다.

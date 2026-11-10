@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
-import { gameApi } from './api';
+import { gameApi } from './gameClient';
 import { errorMessage, TIMEOUT_SYNC_DELAY_MS, verdictMessage } from './logic';
 import type { Difficulty, GameState } from './types';
 
