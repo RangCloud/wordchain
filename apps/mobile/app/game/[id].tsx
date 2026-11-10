@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   StyleSheet,
   TextInput,
@@ -124,8 +123,9 @@ function PlayingView({ game, submitting, feedback, onSubmit, onForfeit }: Playin
     <Screen edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.flex}
-        // iOS는 padding, Android는 windowSoftInputMode가 처리하므로 별도 동작 없음
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // 양쪽 모두 padding: SDK 54 Android는 edge-to-edge라 키보드가 떠도 창이 줄어들지 않는다.
+        // behavior가 없으면 입력칸이 키보드 밑에 깔린다 (Expo 키보드 처리 가이드)
+        behavior="padding"
       >
         <View style={styles.topBar}>
           <IconButton
