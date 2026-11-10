@@ -1,13 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { ManuscriptCells } from '@/components/ManuscriptCells';
 import { Screen } from '@/components/Screen';
-import { MOCK_BEST_SCORES } from '@/features/game/mock';
+import type { BestScores } from '@/features/game/bestScores';
+import { loadBestScores } from '@/features/game/bestScoresStore';
 import { DIFFICULTIES, type Difficulty } from '@/features/game/types';
 import { formatNumber } from '@/lib/format';
 import type { IconName } from '@/lib/icons';
@@ -21,6 +22,20 @@ export default function HomeScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
+  const [bestScores, setBestScores] = useState<BestScores | null>(null);
+
+  // 결과 화면에서 돌아올 때마다 기록을 다시 읽는다(방금 갱신했을 수 있으므로)
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      void loadBestScores().then((scores) => {
+        if (active) setBestScores(scores);
+      });
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
 
   return (
     <Screen edges={['top', 'bottom']}>
@@ -38,7 +53,7 @@ export default function HomeScreen() {
         <View accessibilityRole="radiogroup" style={[styles.options, { borderColor: colors.rule }]}>
           {DIFFICULTIES.map((d, i) => {
             const selected = d.id === difficulty;
-            const best = MOCK_BEST_SCORES[d.id];
+            const best = bestScores?.[d.id] ?? null;
             return (
               <Pressable
                 key={d.id}
@@ -48,7 +63,10 @@ export default function HomeScreen() {
                 accessibilityLabel={`${d.name}, ${d.description}, 최고 기록 ${best ?? '없음'}`}
                 style={({ pressed }) => [
                   styles.option,
-                  i > 0 && { borderTopColor: colors.rule, borderTopWidth: StyleSheet.hairlineWidth },
+                  i > 0 && {
+                    borderTopColor: colors.rule,
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                  },
                   // 선택 상태: 왼쪽 굵은 선 + 옅은 바탕 + 채운 라디오 (색에만 의존하지 않음)
                   selected && { backgroundColor: colors.gridSoft, borderLeftColor: colors.accent },
                   pressed && { opacity: 0.7 },
@@ -82,7 +100,11 @@ export default function HomeScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button label="게임 시작" icon="play" onPress={() => router.push('/game/demo')} />
+        <Button
+          label="게임 시작"
+          icon="play"
+          onPress={() => router.push(`/game/new?difficulty=${difficulty}`)}
+        />
         <View style={styles.links}>
           <TextLink icon="book-outline" label="규칙" onPress={() => router.push('/rules')} />
           <TextLink icon="settings-outline" label="설정" onPress={() => router.push('/settings')} />
@@ -92,7 +114,15 @@ export default function HomeScreen() {
   );
 }
 
-function TextLink({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
+function TextLink({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: IconName;
+  label: string;
+  onPress: () => void;
+}) {
   const { colors } = useTheme();
   return (
     <Pressable

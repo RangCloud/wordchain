@@ -23,6 +23,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
+      # node:test가 .ts를 빌드 없이 실행한다(타입 제거 기능, Node 22.18 이상 기본 켜짐)
+      - run: npm test
 
   api:
     runs-on: ubuntu-latest

@@ -1,5 +1,5 @@
 {
-  "description": "한글 분해·두음법칙 테스트 벡터. 서버(pytest)와 앱(Jest)이 같은 파일을 읽어 두 구현이 같은 결과를 내는지 검증한다.",
+  "description": "한글 분해·두음법칙 테스트 벡터. 서버(pytest)와 앱(node:test)이 같은 파일을 읽어 두 구현이 같은 결과를 내는지 검증한다.",
   "decompose": [
     { "char": "가", "cho": 0, "jung": 0, "jong": 0 },
     { "char": "힣", "cho": 18, "jung": 20, "jong": 27 },
