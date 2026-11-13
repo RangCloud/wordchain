@@ -115,6 +115,11 @@ function pick<T>(items: readonly T[], rng: Rng): T {
 
 const EASY_MAX_LENGTH = 3;
 const EASY_TOP_RATIO = 0.3;
+/**
+ * 어려움 AI는 자기 차례 5번째·10번째… 수에서만 한방단어를 쓴다. 매번 쓰면 두 번째 수에 판이 끝나
+ * 사람이 이길 방법이 없다 (QA DEF-007: 100판 모두 4턴 이내 종료)
+ */
+export const HANBANG_EVERY = 5;
 
 interface ChooseInput {
   previousWord: string;
@@ -122,12 +127,13 @@ interface ChooseInput {
   dictionary: Dictionary;
   difficulty: Difficulty;
   rng: Rng;
-  isFirstTurn?: boolean;
+  /** 이번이 AI의 몇 번째 수인지(1부터). 어려움의 한방단어 사용 시점을 정한다 */
+  aiTurn?: number;
 }
 
 /** AI가 낼 단어. 낼 단어가 없으면 null(= 플레이어 승리) */
 export function chooseWord(input: ChooseInput): string | null {
-  const { previousWord, used, dictionary, difficulty, rng, isFirstTurn = false } = input;
+  const { previousWord, used, dictionary, difficulty, rng, aiTurn = 1 } = input;
   let candidates: string[] = [];
   for (const start of allowedStarts(previousWord.slice(-1))) {
     for (const w of dictionary.wordsStartingWith(start)) if (!used.has(w)) candidates.push(w);
@@ -137,8 +143,10 @@ export function chooseWord(input: ChooseInput): string | null {
   const counts = new Map(candidates.map((w) => [w, nextCount(dictionary, w.slice(-1))]));
   const count = (w: string) => counts.get(w) ?? 0;
 
-  // 한방단어는 어려움 난이도에서만, 그것도 첫 턴이 아닐 때만 쓴다
-  if (difficulty !== 'hard' || isFirstTurn) candidates = candidates.filter((w) => count(w) > 0);
+  // 한방단어는 어려움 난이도에서만, 그것도 AI의 5번째 수마다 쓴다(첫 수는 자연히 제외)
+  if (difficulty !== 'hard' || aiTurn % HANBANG_EVERY !== 0) {
+    candidates = candidates.filter((w) => count(w) > 0);
+  }
   if (difficulty === 'easy') candidates = candidates.filter((w) => w.length <= EASY_MAX_LENGTH);
   if (candidates.length === 0) return null;
 

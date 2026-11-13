@@ -10,7 +10,8 @@ from datetime import datetime, timedelta
 
 from app.domain.ai_player import Difficulty
 
-# 기획서 2-4: 생성 30분이 지난 게임은 없는 것으로 본다 (한 판 2~3분이므로 넉넉한 값)
+# 기획서 2-4: 30분 동안 아무 제출이 없던 게임은 없는 것으로 본다 (한 판 2~3분이므로 넉넉한 값).
+# 생성 시각이 아니라 마지막 제출 시각 기준이다: 30분 넘게 이어지는 판이 도중에 사라지면 안 된다
 SESSION_TTL = timedelta(minutes=30)
 
 
@@ -35,12 +36,18 @@ class GameSession:
     allowed_starts: list[str] = field(default_factory=list)
     status: str = "playing"  # playing | won | lost
     end_reason: str | None = None
+    # 마지막으로 플레이어가 제출·기권한 시각. 없으면 생성 시각을 쓴다 (만료 판단용)
+    last_active_at: datetime | None = None
     # 같은 게임에 요청이 동시에 들어와도 turn 검사와 갱신이 한 번에 일어나도록 잠근다 (TC-W-16)
     lock: threading.Lock = field(default_factory=threading.Lock, repr=False, compare=False)
 
     @property
     def last_word(self) -> str | None:
         return self.moves[-1].word if self.moves else None
+
+    @property
+    def active_at(self) -> datetime:
+        return self.last_active_at or self.created_at
 
 
 class InMemoryGameRepo:
@@ -65,12 +72,12 @@ class InMemoryGameRepo:
             session = self._sessions.get(game_id)
             if session is None:
                 return None
-            if now - session.created_at > self._ttl:
+            if now - session.active_at > self._ttl:
                 del self._sessions[game_id]
                 return None
             return session
 
     def _purge(self, now: datetime) -> None:
-        expired = [gid for gid, s in self._sessions.items() if now - s.created_at > self._ttl]
+        expired = [gid for gid, s in self._sessions.items() if now - s.active_at > self._ttl]
         for gid in expired:
             del self._sessions[gid]

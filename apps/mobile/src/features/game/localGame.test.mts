@@ -105,6 +105,12 @@ describe('턴 진행 (G-03 · G-04 · G-06)', () => {
     assert.equal((await game.submitMove(gameId, 1, '  역량 ')).verdict, 'OK');
   });
 
+  test('자모가 분리된(NFD) 한글도 같은 단어로 판정한다 (QA DEF-006)', async () => {
+    const { game } = setup();
+    const { gameId } = await game.createGame('normal');
+    assert.equal((await game.submitMove(gameId, 1, '역량'.normalize('NFD'))).verdict, 'OK');
+  });
+
   test('무효 단어는 목숨 1개, 턴 +1, 마감은 그대로, 점수 없음', async () => {
     const { game } = setup();
     const created = await game.createGame('normal');
@@ -193,6 +199,17 @@ describe('오류', () => {
     advance(30 * 60_000);
     assert.equal((await game.getGame(gameId)).gameId, gameId);
     advance(60_000);
+    assert.equal(await codeOf(game.getGame(gameId)), 'GAME_NOT_FOUND');
+  });
+
+  test('만료는 마지막 제출 기준: 30분 넘게 이어지는 판도 사라지지 않는다 (QA DEF-001)', async () => {
+    const { game, advance } = setup();
+    const { gameId } = await game.createGame('normal');
+    advance(29 * 60_000);
+    await game.submitMove(gameId, 1, '역량');
+    advance(29 * 60_000);
+    assert.equal((await game.getGame(gameId)).gameId, gameId);
+    advance(2 * 60_000);
     assert.equal(await codeOf(game.getGame(gameId)), 'GAME_NOT_FOUND');
   });
 

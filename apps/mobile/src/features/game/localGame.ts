@@ -24,7 +24,10 @@ const POINTS_PER_CHAR = 10;
 const WIN_POINTS = 100;
 const SCORE_MULTIPLIER: Record<Difficulty, number> = { easy: 1.0, normal: 1.5, hard: 2.0 };
 const TURN_SECONDS: Record<Difficulty, number> = { easy: 15, normal: 15, hard: 10 };
-/** 오래된 판은 지운다. 한 판이 2~3분이므로 30분이면 넉넉하다 */
+/**
+ * 30분 동안 제출이 없던 판은 지운다. 한 판이 2~3분이므로 넉넉하다.
+ * 생성 시각이 아니라 마지막 제출 시각 기준: 30분 넘게 이어지는 판이 도중에 사라지면 안 된다 (QA DEF-001)
+ */
 const SESSION_TTL_MS = 30 * 60 * 1000;
 
 export interface MoveResult {
@@ -51,7 +54,8 @@ interface Session {
   gameId: string;
   difficulty: Difficulty;
   seed: number;
-  createdAt: number;
+  /** 마지막으로 제출·기권한 시각 (만료 판단 기준) */
+  activeAt: number;
   deadline: number;
   turn: number;
   lives: number;
@@ -85,7 +89,7 @@ export function createLocalGame({ loadDictionary, now = Date.now, random = Math.
 
   function get(gameId: string): Session {
     const session = sessions.get(gameId);
-    if (session && now() - session.createdAt > SESSION_TTL_MS) sessions.delete(gameId);
+    if (session && now() - session.activeAt > SESSION_TTL_MS) sessions.delete(gameId);
     else if (session) return session;
     throw new GameError('GAME_NOT_FOUND', '게임을 찾을 수 없습니다.');
   }
@@ -137,14 +141,14 @@ export function createLocalGame({ loadDictionary, now = Date.now, random = Math.
 
   function createGame(difficulty: Difficulty): GameState {
     const at = now();
-    for (const [id, s] of sessions) if (at - s.createdAt > SESSION_TTL_MS) sessions.delete(id);
+    for (const [id, s] of sessions) if (at - s.activeAt > SESSION_TTL_MS) sessions.delete(id);
     dict(); // 사전을 먼저 읽어 둔다: 첫 제출 때 읽으면 그 시간만큼 플레이어의 제한 시간이 줄어든다
     const createdAt = now();
     const session: Session = {
       gameId: newGameId(),
       difficulty,
       seed: Math.floor(random() * 2 ** 32),
-      createdAt,
+      activeAt: createdAt,
       deadline: createdAt + TURN_SECONDS[difficulty] * 1000,
       turn: 1,
       lives: START_LIVES,
@@ -166,8 +170,10 @@ export function createLocalGame({ loadDictionary, now = Date.now, random = Math.
     if (turn !== s.turn) throw new GameError('TURN_MISMATCH', '이미 처리된 요청입니다.');
     // 무효 제출도 턴을 소비한다: 같은 제출이 두 번 들어와도 목숨이 두 번 깎이지 않는다
     s.turn += 1;
+    s.activeAt = at;
 
-    const word = rawWord.trim(); // judge는 공백을 다루지 않는다
+    // judge는 공백·유니코드 형태를 다루지 않는다. NFC로 합쳐 자모가 분리된(NFD) 한글도 같은 단어로 본다
+    const word = rawWord.normalize('NFC').trim();
     const verdict = judge(word, {
       previousWord: s.chain.at(-1)?.word ?? null,
       used: s.used,
@@ -197,7 +203,7 @@ export function createLocalGame({ loadDictionary, now = Date.now, random = Math.
       difficulty: s.difficulty,
       // 시드와 턴으로 매번 새 난수를 만든다: 같은 판·같은 턴이면 항상 같은 수
       rng: seededRng((s.seed ^ Math.imul(s.turn, 0x9e3779b1)) >>> 0),
-      isFirstTurn: !s.chain.some((w) => w.speaker === 'ai'),
+      aiTurn: s.chain.filter((w) => w.speaker === 'ai').length + 1,
     });
     if (aiWord === null) {
       end(s, 'won', 'ai_stuck');
@@ -215,6 +221,7 @@ export function createLocalGame({ loadDictionary, now = Date.now, random = Math.
   function forfeit(gameId: string): GameState {
     const s = get(gameId);
     if (s.status !== 'playing') throw new GameError('GAME_ALREADY_ENDED', '이미 끝난 게임입니다.');
+    s.activeAt = now();
     // 마감이 이미 지났다면 패배 원인은 기권이 아니라 시간 초과다 (G-06)
     end(s, 'lost', isOverdue(s, now()) ? 'timeout' : 'forfeit');
     return toState(s);

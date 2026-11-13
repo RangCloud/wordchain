@@ -9,6 +9,7 @@ import {
   chooseWord,
   type Dictionary,
   GRACE_MS,
+  HANBANG_EVERY,
   judge,
   nextCount,
   seededRng,
@@ -108,7 +109,7 @@ function pick(
   previousWord: string,
   difficulty: Difficulty,
   seed = 0,
-  { used = [previousWord], isFirstTurn = false, dictionary = DICT as Dictionary } = {},
+  { used = [previousWord], aiTurn = 1, dictionary = DICT as Dictionary } = {},
 ) {
   return chooseWord({
     previousWord,
@@ -116,7 +117,7 @@ function pick(
     dictionary,
     difficulty,
     rng: seededRng(seed),
-    isFirstTurn,
+    aiTurn,
   });
 }
 
@@ -127,12 +128,24 @@ describe('chooseWord', () => {
   test('이미 쓴 단어는 제외', () =>
     assert.equal(pick('양말', 'normal', 0, { used: ['양말', '말미'] }), null));
   test('두음 글자로 시작 (례 → 예)', () => assert.equal(pick('차례', 'normal'), '예술'));
-  test('어려움은 한방단어를 고른다', () =>
-    assert.deepEqual(new Set(SEEDS.map((s) => pick('일기', 'hard', s))), new Set(['기쁨'])));
-  test('어려움도 첫 턴에는 한방단어를 피한다', () => {
-    const picked = new Set(SEEDS.map((s) => pick('일기', 'hard', s, { isFirstTurn: true })));
-    assert.equal(picked.has('기쁨'), false);
-    for (const w of picked) assert.ok(['기름', '기차', '기상예보'].includes(w as string));
+  for (const aiTurn of [HANBANG_EVERY, HANBANG_EVERY * 2]) {
+    test(`어려움은 5번째 수마다 한방단어를 고른다 (AI ${aiTurn}번째 수)`, () =>
+      assert.deepEqual(
+        new Set(SEEDS.map((s) => pick('일기', 'hard', s, { aiTurn }))),
+        new Set(['기쁨']),
+      ));
+  }
+  for (const aiTurn of [1, 2, HANBANG_EVERY - 1, HANBANG_EVERY + 1]) {
+    test(`어려움도 그 밖의 수에서는 한방단어를 피한다 (AI ${aiTurn}번째 수)`, () => {
+      const picked = new Set(SEEDS.map((s) => pick('일기', 'hard', s, { aiTurn })));
+      assert.equal(picked.has('기쁨'), false);
+      for (const w of picked) assert.ok(['기름', '기차', '기상예보'].includes(w as string));
+    });
+  }
+  test('어려움: 한방단어만 남았는데 쓸 차례가 아니면 AI 패배', () => {
+    const used = ['일기', '기름', '기차', '기상예보'];
+    assert.equal(pick('일기', 'hard', 0, { used }), null);
+    assert.equal(pick('일기', 'hard', 0, { used, aiTurn: HANBANG_EVERY }), '기쁨');
   });
   test('보통은 한방단어를 쓰지 않고 매번 같지 않다', () => {
     const picked = new Set(SEEDS.map((s) => pick('일기', 'normal', s)));
@@ -161,6 +174,7 @@ function playAiVsAi(seed: number, difficulty: Difficulty): string[] {
       dictionary: DICT,
       difficulty,
       rng,
+      aiTurn: words.length,
     });
     if (word === null) return words;
     words.push(word);
