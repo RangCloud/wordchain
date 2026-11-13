@@ -2,7 +2,7 @@
   "expo": {
     "name": "말꼬리",
     "slug": "wordchain",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "wordchain",
     "userInterfaceStyle": "automatic",
