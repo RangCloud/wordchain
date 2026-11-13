@@ -73,7 +73,7 @@
 - 사전 다시 만들기: `apps/api`에서 `uv run python -m scripts.build_dictionary` → 앱 단어 목록 갱신: `uv run python -m scripts.export_word_list` (`apps/mobile/src/features/game/data/words.json`, 단어만·뜻풀이 제외, 커밋한다)
 
 ## 13. 진행 상태 (2026-11-13 기준, 작업 후 갱신)
-- 작업 브랜치: `feature/offline-mode` (원격: GitHub `RangCloud/wordchain`. PR #1 병합, PR #2 `feature/game-api` → `main` 리뷰 중)
+- 작업 브랜치: `feature/offline-mode` (원격: GitHub `RangCloud/wordchain`. PR #1 병합, PR #2 `feature/game-api` → `main` 리뷰 중, PR #3 `feature/offline-mode` → `feature/game-api`(#2 머지 후 base를 `main`으로). 앱 버전 1.0.0)
 - **완료**: 서버 `domain/`·게임 API·요청 제한(PR #1·#2). 앱 단독 엔진 `engine.ts`(사전·판정·AI) · `localGame.ts`(진행·점수·시간) · `gameClient.ts`(번들 단어 목록 21만 개 지연 로딩), 화면을 앱 엔진으로 연결, 결과 화면은 뜻풀이 없이 단어만, `eas.json`(preview=APK, production=AAB·자동 versionCode). 테스트 서버 199개 · 앱 150개 통과. EAS 프로젝트 연결, 설정 > 정보에 사전 저작자 표시. 출시 전 QA(`docs/qa/` 보고서 v1.2): 결함 7건 모두 조치(실기기 확인 3건 대기), 앱 아이콘(사전 표지 + '한', `apps/mobile/assets/images/`)·스토어 그래픽(`docs/store/`)·개인정보처리방침 초안(`docs/privacy-policy.md`). 실제 단어 목록으로 AI 대 AI 300판: 잘못된 AI 단어 0, AI 응답 최악 1.4ms(Node).
 - **다음**: `eas build -p android --profile preview`로 실기기 QA(TC-W-18, DV-01~06) → 개인정보처리방침 문의처 기입·웹 공개 → production 빌드 → `eas submit`(Play 비공개 테스트 · TestFlight).
 - **QA 결과(2026-10-15, 서버 버전)**: TC-W-01~17 자동화, 실제 사전으로 게임 300판 무작위·이상 입력 검사 500 오류 0건, AI 응답 최악 4ms
