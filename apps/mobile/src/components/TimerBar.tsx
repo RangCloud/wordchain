@@ -5,7 +5,7 @@ import { radius, space, useTheme } from '@/theme';
 import { AppText } from './AppText';
 
 /** 이 초 이하로 남으면 경고 상태 (기획서 2-5: 5초 이하 색 변경 + 진동 1회) */
-const URGENT_SECONDS = 5;
+export const URGENT_SECONDS = 5;
 
 interface TimerBarProps {
   secondsLeft: number;

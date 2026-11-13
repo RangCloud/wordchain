@@ -15,6 +15,9 @@ from app.domain.rule_engine import next_count
 
 EASY_MAX_LENGTH = 3
 EASY_TOP_RATIO = 0.3
+# 어려움 AI는 자기 차례 5번째·10번째… 수에서만 한방단어를 쓴다. 매번 쓰면 두 번째 수에 판이 끝나
+# 사람이 이길 방법이 없다 (QA DEF-007: 100판 모두 4턴 이내 종료)
+HANBANG_EVERY = 5
 
 
 class Difficulty(StrEnum):
@@ -30,9 +33,12 @@ def choose_word(
     dictionary: Dictionary,
     difficulty: Difficulty,
     rng: random.Random,
-    is_first_turn: bool = False,
+    ai_turn: int = 1,
 ) -> str | None:
-    """AI가 낼 단어를 고른다. 낼 단어가 없으면 None(= 플레이어 승리)."""
+    """AI가 낼 단어를 고른다. 낼 단어가 없으면 None(= 플레이어 승리).
+
+    ai_turn: 이번이 AI의 몇 번째 수인지(1부터). 어려움의 한방단어 사용 시점을 정한다.
+    """
     candidates: list[str] = []
     for start in allowed_starts(previous_word[-1]):
         candidates += [w for w in dictionary.words_starting_with(start) if w not in used]
@@ -40,8 +46,8 @@ def choose_word(
     # 단어별 '상대가 이어갈 수 있는 단어 수'. 0이면 한방단어다
     counts = {w: next_count(dictionary, w[-1]) for w in candidates}
 
-    # 한방단어는 어려움 난이도에서만, 그것도 첫 턴이 아닐 때만 쓴다
-    if difficulty is not Difficulty.HARD or is_first_turn:
+    # 한방단어는 어려움 난이도에서만, 그것도 AI의 5번째 수마다 쓴다(첫 수는 자연히 제외)
+    if difficulty is not Difficulty.HARD or ai_turn % HANBANG_EVERY != 0:
         candidates = [w for w in candidates if counts[w] > 0]
     if difficulty is Difficulty.EASY:
         candidates = [w for w in candidates if len(w) <= EASY_MAX_LENGTH]
