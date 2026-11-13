@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "scheme": "wordchain",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/images/icon.png",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
@@ -15,15 +16,38 @@
       }
     },
     "android": {
-      "package": "com.rangcloud.wordchain"
+      "package": "com.rangcloud.wordchain",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundImage": "./assets/images/adaptive-background.png",
+        "monochromeImage": "./assets/images/adaptive-monochrome.png",
+        "backgroundColor": "#1E5E40"
+      },
+      "permissions": [
+        "android.permission.VIBRATE"
+      ]
     },
     "web": {
       "output": "single",
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#FBFAF5",
+          "dark": {
+            "image": "./assets/images/splash-icon.png",
+            "backgroundColor": "#0F1411"
+          }
+        }
+      ]
     ],
     "extra": {
       "router": {},
