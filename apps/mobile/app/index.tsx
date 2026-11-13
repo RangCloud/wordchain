@@ -59,7 +59,9 @@ export default function HomeScreen() {
                 key={d.id}
                 onPress={() => setDifficulty(d.id)}
                 accessibilityRole="radio"
-                accessibilityState={{ selected }}
+                // radio 역할은 checked로 상태를 읽는다(selected는 '선택됨'으로 읽히지 않음, QA DEF-005).
+                // aria-checked는 iOS·Android·웹(react-native-web) 모두에 전달된다
+                aria-checked={selected}
                 accessibilityLabel={`${d.name}, ${d.description}, 최고 기록 ${best ?? '없음'}`}
                 style={({ pressed }) => [
                   styles.option,
