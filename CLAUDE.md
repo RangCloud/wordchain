@@ -68,7 +68,7 @@
 - 작업 요약에 무엇을 확인했는지 적는다.
 
 ## 12. 사전 데이터
-- 출처는 국립국어원 표준국어대사전(CC BY-SA 2.0 KR). 조건과 출시 전 점검표는 `README.md`의 "사전 데이터 출처와 라이선스"를 따른다.
+- 출처는 국립국어원 표준국어대사전(CC BY-SA 2.0 KR). 이용 조건과 표기 문구는 `README.md`의 "사전 데이터 출처와 라이선스"를 따른다.
 - 표제어·품사·뜻풀이만 쓴다. 용례(예문), 발음·이미지 등 다중 매체는 쓰지 않는다.
 - 사전 다시 만들기: `apps/api`에서 `uv run python -m scripts.build_dictionary` → 앱 단어 목록 갱신: `uv run python -m scripts.export_word_list` (`apps/mobile/src/features/game/data/words.json`, 단어만·뜻풀이 제외, 커밋한다)
 
