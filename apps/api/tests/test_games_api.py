@@ -4,6 +4,7 @@
 그래야 '마감 1.5초 후' 같은 경계값을 기다리지 않고 정확히 재현할 수 있다.
 """
 
+import unicodedata
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 
@@ -144,6 +145,15 @@ def test_surrounding_whitespace_is_trimmed(api: TestClient) -> None:
     assert body["verdict"] == "OK"
 
 
+def test_decomposed_hangul_is_normalized(api: TestClient) -> None:
+    # 자모가 분리된(NFD) 한글을 붙여 넣어도 같은 단어로 판정한다 (QA DEF-006)
+    game = new_game(api)
+
+    body = move(api, game["game_id"], 1, unicodedata.normalize("NFD", "역량"))
+
+    assert body["verdict"] == "OK"
+
+
 @pytest.mark.parametrize("word", ["", "   ", "가" * 51])
 def test_empty_or_too_long_word_is_validation_error(api: TestClient, word: str) -> None:
     game = new_game(api)
@@ -256,6 +266,19 @@ def test_tc_w_17_game_expires_after_30_minutes(api: TestClient, clock: FakeClock
     res = api.get(f"/v1/games/{game_id}")
     assert res.status_code == 404
     assert res.json()["error"]["code"] == "GAME_NOT_FOUND"
+
+
+def test_submit_restarts_expiry_clock(api: TestClient, clock: FakeClock) -> None:
+    # 만료는 생성이 아니라 마지막 제출 기준: 30분 넘게 이어지는 판이 사라지면 안 된다 (QA DEF-001)
+    game_id = new_game(api)["game_id"]
+    clock.advance(minutes=29)
+    move(api, game_id, 1, "역량")
+
+    clock.advance(minutes=29)
+    assert api.get(f"/v1/games/{game_id}").status_code == 200
+
+    clock.advance(minutes=2)
+    assert api.get(f"/v1/games/{game_id}").status_code == 404
 
 
 def test_unknown_game_is_not_found(api: TestClient) -> None:

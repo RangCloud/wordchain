@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from app.domain.ai_player import Difficulty, choose_word
+from app.domain.ai_player import HANBANG_EVERY, Difficulty, choose_word
 from app.domain.dictionary import InMemoryDictionary
 from app.domain.rule_engine import Verdict, judge
 from tests.domain_fixtures import make_dictionary
@@ -16,7 +16,7 @@ def pick(
     difficulty: Difficulty,
     seed: int = 0,
     used: tuple[str, ...] | None = None,
-    is_first_turn: bool = False,
+    ai_turn: int = 1,
 ) -> str | None:
     return choose_word(
         previous_word=previous_word,
@@ -24,7 +24,7 @@ def pick(
         dictionary=DICT,
         difficulty=difficulty,
         rng=random.Random(seed),
-        is_first_turn=is_first_turn,
+        ai_turn=ai_turn,
     )
 
 
@@ -43,14 +43,23 @@ def test_uses_dueum_start() -> None:
     assert pick("차례", Difficulty.NORMAL) == "예술"
 
 
-def test_hard_prefers_hanbang() -> None:
-    assert {pick("일기", Difficulty.HARD, s) for s in SEEDS} == {"기쁨"}
+@pytest.mark.parametrize("ai_turn", [HANBANG_EVERY, HANBANG_EVERY * 2])
+def test_hard_uses_hanbang_every_5th_turn(ai_turn: int) -> None:
+    assert {pick("일기", Difficulty.HARD, s, ai_turn=ai_turn) for s in SEEDS} == {"기쁨"}
 
 
-def test_hard_avoids_hanbang_on_first_turn() -> None:
-    picked = {pick("일기", Difficulty.HARD, s, is_first_turn=True) for s in SEEDS}
+@pytest.mark.parametrize("ai_turn", [1, 2, HANBANG_EVERY - 1, HANBANG_EVERY + 1])
+def test_hard_avoids_hanbang_on_other_turns(ai_turn: int) -> None:
+    picked = {pick("일기", Difficulty.HARD, s, ai_turn=ai_turn) for s in SEEDS}
     assert "기쁨" not in picked
     assert picked <= {"기름", "기차", "기상예보"}
+
+
+def test_hard_gives_up_when_only_hanbang_is_left_off_turn() -> None:
+    # 한방단어만 남았는데 쓸 차례가 아니면 AI 패배, 5번째 수라면 한방단어로 끝낸다
+    used = ("일기", "기름", "기차", "기상예보")
+    assert pick("일기", Difficulty.HARD, used=used, ai_turn=1) is None
+    assert pick("일기", Difficulty.HARD, used=used, ai_turn=HANBANG_EVERY) == "기쁨"
 
 
 def test_normal_never_uses_hanbang_and_varies() -> None:
@@ -90,6 +99,7 @@ def play_ai_vs_ai(seed: int, difficulty: Difficulty) -> list[str]:
             dictionary=DICT,
             difficulty=difficulty,
             rng=rng,
+            ai_turn=len(words),
         )
         if word is None:
             return words

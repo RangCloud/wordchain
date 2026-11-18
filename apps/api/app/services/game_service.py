@@ -7,6 +7,7 @@
 
 import random
 import secrets
+import unicodedata
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -91,8 +92,11 @@ class GameService:
                 raise AppError("TURN_MISMATCH", "이미 처리된 요청입니다.", 409)
             # 무효 제출도 턴을 소비한다. 그래야 재전송된 같은 요청이 목숨을 두 번 깎지 않는다
             session.turn += 1
+            session.last_active_at = now
 
-            word = word.strip()  # judge는 공백을 다루지 않는다(앞뒤 공백 제거는 서비스 책임)
+            # judge는 공백·유니코드 형태를 다루지 않는다(서비스 책임).
+            # NFC로 합치는 이유: 자모가 분리된(NFD) 한글을 붙여 넣어도 같은 단어로 판정하려고
+            word = unicodedata.normalize("NFC", word).strip()
             verdict = judge(
                 word,
                 previous_word=session.last_word,
@@ -122,7 +126,7 @@ class GameService:
                 difficulty=session.difficulty,
                 # 시드와 턴으로 매번 새 rng를 만든다: 세션에 rng 객체를 들고 있지 않아도 재현된다
                 rng=random.Random(session.seed * 10_000 + session.turn),
-                is_first_turn=not any(m.by == "ai" for m in session.moves),
+                ai_turn=sum(m.by == "ai" for m in session.moves) + 1,
             )
             if ai_word is None:
                 _end(session, "won", END_AI_STUCK)
@@ -140,6 +144,7 @@ class GameService:
         with session.lock:
             if session.status != "playing":
                 raise AppError("GAME_ALREADY_ENDED", "이미 끝난 게임입니다.", 409)
+            session.last_active_at = now
             # 마감이 이미 지났다면 패배 원인은 기권이 아니라 시간 초과다 (G-06: 패배 원인 표시)
             _end(session, "lost", END_TIMEOUT if _is_overdue(session, now) else END_FORFEIT)
         return session

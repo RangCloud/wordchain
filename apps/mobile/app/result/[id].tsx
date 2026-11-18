@@ -8,7 +8,7 @@ import { Button } from '@/components/Button';
 import { LoadState } from '@/components/LoadState';
 import { ManuscriptCells } from '@/components/ManuscriptCells';
 import { Screen } from '@/components/Screen';
-import { gameApi, type ServerResult } from '@/features/game/api';
+import { gameApi, type GameResultData } from '@/features/game/gameClient';
 import { recordScore } from '@/features/game/bestScoresStore';
 import { errorMessage, isValidGameId } from '@/features/game/logic';
 import { DIFFICULTIES, REASON_LABELS, type ResultWord } from '@/features/game/types';
@@ -24,7 +24,7 @@ export default function ResultScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const validId = isValidGameId(id);
-  const [result, setResult] = useState<ServerResult | null>(null);
+  const [result, setResult] = useState<GameResultData | null>(null);
   const [error, setError] = useState<string | null>(validId ? null : '잘못된 결과 주소예요.');
 
   const load = useCallback(async () => {
@@ -56,7 +56,7 @@ export default function ResultScreen() {
   return <ResultView result={result} />;
 }
 
-function ResultView({ result }: { result: ServerResult }) {
+function ResultView({ result }: { result: GameResultData }) {
   const router = useRouter();
   const { colors } = useTheme();
   const [isNewBest, setIsNewBest] = useState(false);
@@ -131,11 +131,34 @@ function ResultView({ result }: { result: ServerResult }) {
   );
 }
 
-/** 단어 한 줄. 탭하면 뜻풀이가 펼쳐진다 */
+/** 단어 한 줄. 뜻풀이가 있으면 탭해서 펼친다 */
 function WordRow({ item }: { item: ResultWord }) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
   const isPlayer = item.speaker === 'player';
+
+  // 앱 단독 버전은 용량 때문에 뜻풀이를 넣지 않는다. 펼칠 내용이 없는데 버튼처럼 보이면 혼란스러우므로 일반 줄로 그린다
+  if (!item.definition) {
+    return (
+      <View
+        accessible
+        accessibilityLabel={`${item.word}, ${isPlayer ? '내 단어' : 'AI 단어'}`}
+        style={[styles.wordRow, { borderBottomColor: colors.rule }]}
+      >
+        <View style={styles.wordMain}>
+          <AppText variant="caption" tone="muted" numeric style={styles.turn}>
+            {item.turn}
+          </AppText>
+          <AppText variant="body" bold style={styles.word}>
+            {item.word}
+          </AppText>
+          <AppText variant="caption" tone={isPlayer ? 'accent' : 'muted'} bold={isPlayer}>
+            {isPlayer ? '나' : 'AI'}
+          </AppText>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <Pressable
