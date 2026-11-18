@@ -11,7 +11,7 @@ export function secondsUntil(deadlineMs: number, nowMs: number = Date.now()): nu
  * '1초마다 1씩 빼기'가 아니라 '마감 시각 - 현재 시각'으로 매번 다시 계산한다.
  * setInterval은 앱이 백그라운드로 가거나 JS 스레드가 바쁘면 밀리기 때문에,
  * 빼기 방식은 실제보다 시간이 느리게 흐르는 오차가 쌓인다.
- * 2주차에는 deadlineMs를 서버 응답의 deadline으로 받아 기기 간 오차도 없앤다(기획서 G-05).
+ * deadlineMs는 서버가 본 남은 시간으로 보정한 값이라 기기 시계가 틀려도 서버와 맞는다(기획서 G-05).
  */
 export function useCountdown(deadlineMs: number): number {
   const [secondsLeft, setSecondsLeft] = useState(() => secondsUntil(deadlineMs));

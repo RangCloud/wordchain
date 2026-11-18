@@ -39,6 +39,11 @@ def _error_response(status_code: int, code: str, message: str, request_id: str) 
     return JSONResponse(status_code=status_code, content=body.model_dump())
 
 
+def error_response(status_code: int, code: str, message: str) -> JSONResponse:
+    """예외 처리기 밖(미들웨어)에서도 같은 오류 형식을 쓰기 위한 함수."""
+    return _error_response(status_code, code, message, _new_request_id())
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def handle_app_error(_: Request, exc: AppError) -> JSONResponse:
@@ -47,7 +52,10 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(RequestValidationError)
     async def handle_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
         request_id = _new_request_id()
-        logger.info("validation error [%s]: %s", request_id, exc.errors())
+        # 입력값(input)은 로그에 남기지 않는다:
+        # 사용자가 보낸 큰 문자열이나 줄바꿈이 로그를 오염시킬 수 있다
+        summary = [(".".join(map(str, e.get("loc", ()))), e.get("type")) for e in exc.errors()]
+        logger.info("validation error [%s]: %s", request_id, summary)
         return _error_response(
             422, "VALIDATION_ERROR", "요청 형식이 올바르지 않습니다.", request_id
         )
